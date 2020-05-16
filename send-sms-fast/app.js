@@ -1,5 +1,5 @@
  const axios = require('axios');
-// const url = 'http://checkip.amazonaws.com/';
+ const axiosThrottle = require('axios-throttle'); 
  const querystring = require('querystring');
  let response;
 
@@ -17,9 +17,6 @@
  */
 exports.sendSMSFastHandler = async (event, context) => {
     try {
-        console.log("====================",event.headers);
-        // const ret = await axios(url);
-        
 
         let recipients = JSON.parse(event.body).records;
         let smsReport = {
@@ -27,9 +24,24 @@ exports.sendSMSFastHandler = async (event, context) => {
             failed: 0
         };
  
+        let tracked_link_url = event.queryStringParameters.tracked_link_url || event.headers['X-Sms-Tracked-Link-Url'];
+        if(tracked_link_url){
+            axiosThrottle.init(axios,20)
+        }
         await Promise.all(recipients.map(async (recipient) => {
+
+            let message = event.queryStringParameters.message || event.headers['X-Sms-Message'];
+            let decodedMessage = decodeURIComponent(message.replace(/\+/g,  " "));
+            let template_fields = decodedMessage.match(/[^[\]]+(?=])/g);
+            template_fields.forEach(function(item){                 
+                let regx = new RegExp("\\["+item+"\\]","g");
+                if(recipient[item]){
+                    decodedMessage = decodedMessage.replace(regx,recipient[item]);
+                }
+            });
+
             let params = {
-                message: event.queryStringParameters.message || event.headers['X-Sms-Message'],
+                message: decodedMessage,
                 to: recipient.MobilePhone,
                 countrycode: recipient.MailingCountry || event.queryStringParameters.default_country || event.headers['X-Sms-Default-County'],
                 from: event.queryStringParameters.from || event.headers['X-Sms-From'],
@@ -41,7 +53,7 @@ exports.sendSMSFastHandler = async (event, context) => {
                 replies_to_email: event.queryStringParameters.replies_to_email || event.headers['X-Sms-Replies-To-Email'],
                 list_id: event.queryStringParameters.list_id || event.headers['X-Sms-List-Id'],
                 from_shared: event.queryStringParameters.from_shared || event.headers['X-Sms-From-Shared'],
-                tracked_link_url: event.queryStringParameters.tracked_link_url || event.headers['X-Sms-Tracked-Link-Url']
+                tracked_link_url: tracked_link_url
             };
 
             let queryparams = querystring.stringify(params);
@@ -55,7 +67,7 @@ exports.sendSMSFastHandler = async (event, context) => {
                 url: 'https://sendsms.transmitsms.com/send-sms-fast?' + queryparams
             };
 
-            if(params.list_id || params.tracked_link_url){
+            if(params.tracked_link_url){
                 options.url = 'https://api.transmitsms.com/send-sms.json?' + queryparams;
             }
         
@@ -83,5 +95,4 @@ exports.sendSMSFastHandler = async (event, context) => {
         return err;
     }
 
-    // return response
 };
