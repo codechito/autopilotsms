@@ -12,7 +12,7 @@ Resources:
   SendSMSFastFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://send-sms-fast/1664742ddad86848eecb3295ef84125d
+      CodeUri: s3://send-sms-fast/b3f4367636f389718a35f483cefd058f
       Handler: app.sendSMSFastHandler
       Runtime: nodejs12.x
       FunctionName: SendSMS
@@ -25,9 +25,9 @@ Resources:
             Method: post
 Outputs:
   SendSMSFastApi:
-    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Description: API Gateway endpoint URL for Prod stage for Send SMS Fast function
     Value:
-      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/send-sms
   SendSMSFastFunction:
     Description: Send SMS Fast Function ARN
     Value:
