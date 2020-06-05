@@ -21,22 +21,29 @@ exports.sendSMSFastHandler = async (event, context) => {
             sent: 0,
             failed: 0
         };
+        
+        if(event.queryStringParameters == null){
+            event.queryStringParameters = {};
+        }
+
         let tracked_link_url = event.queryStringParameters.tracked_link_url || event.headers['X-Sms-Tracked-Link-Url'] || event.headers['x-sms-tracked_link_url'];
-        let message = event.queryStringParameters.message || event.headers['X-Sms-Message'] || event.headers['x-sms-message'];
+        let message = JSON.parse(event.body).custom;
         if(tracked_link_url){
             axiosThrottle.init(axios,20)
         }
         if(message != null && message != ''){
             await Promise.all(recipients.map(async (recipient) => {
                 
-                let decodedMessage = decodeURIComponent(message.replace(/\+/g,  " "));
+                let decodedMessage = message;
                 let template_fields = decodedMessage.match(/[^[\]]+(?=])/g);
-                template_fields.forEach(function(item){                 
-                    let regx = new RegExp("\\["+item+"\\]","g");
-                    if(recipient[item]){
-                        decodedMessage = decodedMessage.replace(regx,recipient[item]);
-                    }
-                });
+                if(template_fields && template_fields.length){
+                    template_fields.forEach(function(item){                 
+                        let regx = new RegExp("\\["+item+"\\]","g");
+                        if(recipient[item]){
+                            decodedMessage = decodedMessage.replace(regx,recipient[item]);
+                        }
+                    });
+                }
 
                 let params = {
                     message: decodedMessage,
