@@ -12,7 +12,7 @@ Resources:
   SendSMSFastFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://send-sms-fast/587ad139e200f0a7c1f16f48e83a5e45
+      CodeUri: s3://send-sms-fast/0ff309e405e65105caa70fb39265c9e8
       Handler: app.sendSMSFastHandler
       Runtime: nodejs12.x
       FunctionName: SendSMS
